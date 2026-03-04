@@ -1,0 +1,527 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard – Bitrade{% endblock %}
+{% block extra_head %}
+<style>
+.layout{display:flex;min-height:calc(100vh - 0px);}
+.sidebar{width:230px;background:var(--bg2);border-right:1px solid var(--border);padding:1.5rem 0;position:fixed;left:0;top:0;bottom:0;z-index:50;overflow-y:auto;}
+.sidebar-brand{padding:1.2rem 1.5rem 1.5rem;font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sidebar-wallet{padding:.5rem 1.5rem 1.2rem;font-size:.65rem;font-family:'Space Mono',monospace;color:var(--muted);border-bottom:1px solid var(--border);word-break:break-all;line-height:1.5;}
+.sidebar-section{padding:.8rem 1.5rem .3rem;font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;}
+.sidebar a{display:flex;align-items:center;gap:.8rem;padding:.65rem 1.5rem;color:var(--muted);font-size:.83rem;font-weight:600;transition:.15s;border-left:2px solid transparent;}
+.sidebar a:hover,.sidebar a.active{color:var(--cyan);background:rgba(0,212,255,.04);border-left-color:var(--cyan);}
+.sidebar-logout{margin-top:auto;padding:1rem 1.5rem;border-top:1px solid var(--border);}
+.main{margin-left:230px;flex:1;min-height:100vh;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between;}
+.topbar-title{font-size:1.1rem;font-weight:700;}
+.content{padding:2rem;}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
+.hero-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.5rem;position:relative;overflow:hidden;}
+.hero-card::before{content:'';position:absolute;top:-30px;right:-30px;width:80px;height:80px;border-radius:50%;opacity:.1;}
+.hero-card.c{border-color:rgba(0,212,255,.2);}
+.hero-card.c::before{background:var(--cyan);}
+.hero-card.p{border-color:rgba(168,85,247,.2);}
+.hero-card.p::before{background:var(--purple);}
+.hero-card.g{border-color:rgba(245,158,11,.2);}
+.hero-card.g::before{background:var(--gold);}
+.hero-card.gr{border-color:rgba(16,185,129,.2);}
+.hero-card.gr::before{background:var(--green);}
+.hero-val{font-size:1.6rem;font-weight:800;font-family:'Space Mono',monospace;margin-bottom:.2rem;}
+.hero-lbl{font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+.hero-icon{font-size:1.5rem;margin-bottom:.5rem;}
+.plan-card{background:var(--card);border-radius:14px;padding:1.5rem;margin-bottom:1rem;position:relative;overflow:hidden;}
+.plan-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;}
+.plan-name-badge{font-size:.8rem;font-weight:700;padding:.3rem .8rem;border-radius:6px;}
+.plan-amount{font-size:1.4rem;font-weight:800;font-family:'Space Mono',monospace;}
+.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem;}
+.plan-metric{background:var(--bg3);border-radius:8px;padding:.8rem;}
+.plan-metric-val{font-size:1rem;font-weight:700;font-family:'Space Mono',monospace;margin-bottom:.2rem;}
+.plan-metric-lbl{font-size:.68rem;color:var(--muted);font-weight:600;text-transform:uppercase;}
+.countdown-display{display:flex;gap:.5rem;align-items:center;}
+.countdown-unit{background:var(--bg3);border-radius:6px;padding:.4rem .6rem;text-align:center;min-width:44px;}
+.countdown-num{font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--cyan);}
+.countdown-lbl{font-size:.55rem;color:var(--muted);text-transform:uppercase;}
+.tab-nav{display:flex;gap:.5rem;margin-bottom:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.4rem;}
+.tab-nav button{flex:1;padding:.55rem;border:none;background:transparent;color:var(--muted);border-radius:7px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;transition:.2s;}
+.tab-nav button.active{background:var(--bg);color:var(--cyan);border:1px solid rgba(0,212,255,.2);}
+.ref-link-box{display:flex;align-items:center;gap:.5rem;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.7rem 1rem;}
+.ref-link-box input{background:transparent;border:none;font-family:'Space Mono',monospace;font-size:.75rem;flex:1;}
+.plan-select-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+.plan-select-card{border:2px solid var(--border);border-radius:12px;padding:1.2rem;cursor:pointer;transition:.2s;background:var(--card);text-align:center;}
+.plan-select-card:hover{transform:translateY(-2px);}
+.plan-select-card.selected-plan{box-shadow:0 0 20px rgba(0,212,255,.15);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;}
+.modal-title{font-size:1.2rem;font-weight:700;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;}
+.modal-close{cursor:pointer;color:var(--muted);font-size:1.2rem;background:none;border:none;color:var(--muted);}
+.qr-wrap{background:white;border-radius:10px;padding:.8rem;display:inline-block;margin:0 auto 1rem;}
+.steps{counter-reset:step;}
+.step{display:flex;gap:.8rem;margin-bottom:.8rem;font-size:.82rem;}
+.step-num{width:22px;height:22px;border-radius:50%;background:rgba(0,212,255,.15);border:1px solid rgba(0,212,255,.3);color:var(--cyan);font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.1rem;}
+.no-plans{text-align:center;padding:3rem;color:var(--muted);}
+.no-plans-icon{font-size:3rem;margin-bottom:1rem;opacity:.5;}
+</style>
+{% endblock %}
+{% block body %}
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-brand">BITRADE</div>
+    <div class="sidebar-wallet">{{ user.wallet[:6] }}...{{ user.wallet[-6:] }}</div>
+    <div class="sidebar-section">Main</div>
+    <a href="/dashboard" class="active">📊 Dashboard</a>
+    <a href="#" onclick="openDepositModal()">💳 Deposit</a>
+    <a href="#" onclick="openWithdrawModal()">💸 Withdraw</a>
+    <div class="sidebar-section">Account</div>
+    <a href="#" onclick="showTab('referrals-tab')">👥 Referrals</a>
+    <a href="#" onclick="showTab('history-tab')">📋 History</a>
+    <div class="sidebar-logout">
+      <a href="/logout" style="color:var(--red);border-left:none;">🚪 Logout</a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">Dashboard</div>
+      <div style="display:flex;gap:.8rem;align-items:center;">
+        <span class="badge badge-active">● Live</span>
+        <button class="btn btn-primary btn-sm" onclick="openDepositModal()">+ Deposit</button>
+        <button class="btn btn-outline btn-sm" onclick="openWithdrawModal()">Withdraw</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Stats Row -->
+      <div class="hero-stats">
+        <div class="hero-card c">
+          <div class="hero-icon">💰</div>
+          <div class="hero-val text-cyan">${{ "%.2f"|format(user.balance) }}</div>
+          <div class="hero-lbl">Total Balance</div>
+        </div>
+        <div class="hero-card p">
+          <div class="hero-icon">📈</div>
+          <div class="hero-val text-purple" id="total-earnings">$0.00</div>
+          <div class="hero-lbl">Active Earnings</div>
+        </div>
+        <div class="hero-card g">
+          <div class="hero-icon">👥</div>
+          <div class="hero-val text-gold">{{ total_referrals }}</div>
+          <div class="hero-lbl">Total Referrals</div>
+        </div>
+        <div class="hero-card gr">
+          <div class="hero-icon">💎</div>
+          <div class="hero-val text-green">${{ "%.2f"|format(user.referral_earnings) }}</div>
+          <div class="hero-lbl">Referral Earnings</div>
+        </div>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="tab-nav">
+        <button class="active" onclick="showTab('plans-tab',this)">Active Plans</button>
+        <button onclick="showTab('referrals-tab',this)">Referrals</button>
+        <button onclick="showTab('history-tab',this)">History</button>
+      </div>
+
+      <!-- Plans Tab -->
+      <div id="plans-tab">
+        {% if active_plans %}
+          {% for p in active_plans %}
+          <div class="plan-card" style="border:1px solid {{ p.color }}33;">
+            <div style="position:absolute;top:0;right:0;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,{{ p.color }}08,transparent);pointer-events:none;"></div>
+            <div class="plan-card-header">
+              <div>
+                <div class="plan-name-badge" style="background:{{ p.color }}15;color:{{ p.color }};border:1px solid {{ p.color }}30;">{{ p.plan_name }}</div>
+                <div style="margin-top:.5rem;font-size:.75rem;color:var(--muted);">Started: {{ p.start_time }}</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="plan-amount" style="color:{{ p.color }};">${{ "%.2f"|format(p.amount) }}</div>
+                <div style="font-size:.72rem;color:var(--muted);">Invested Amount</div>
+              </div>
+            </div>
+            <div class="plan-grid">
+              <div class="plan-metric">
+                <div class="plan-metric-val text-green" id="daily-{{ p.id }}">${{ "%.4f"|format(p.daily_earnings) }}</div>
+                <div class="plan-metric-lbl">Daily Earnings</div>
+              </div>
+              <div class="plan-metric">
+                <div class="plan-metric-val text-cyan" id="total-{{ p.id }}">${{ "%.4f"|format(p.total_earnings) }}</div>
+                <div class="plan-metric-lbl">Total Earned</div>
+              </div>
+              <div class="plan-metric">
+                <div class="plan-metric-val">{{ (p.remaining_secs // 86400) }} days</div>
+                <div class="plan-metric-lbl">Remaining</div>
+              </div>
+            </div>
+            <div style="margin-bottom:.8rem;">
+              <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:.4rem;">
+                <span>Progress</span>
+                <span>Ends: {{ p.end_time }}</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="prog-{{ p.id }}"
+                     style="width:{{ [((20 * 86400 - p.remaining_secs) / (20 * 86400) * 100), 0]|max }}%;background:linear-gradient(90deg,{{ p.color }},{{ p.color }}88);">
+                </div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:.72rem;color:var(--muted);margin-bottom:.5rem;">Time Remaining</div>
+              <div class="countdown-display" id="countdown-{{ p.id }}" data-secs="{{ p.remaining_secs }}">
+                <div class="countdown-unit"><div class="countdown-num" id="cd-d-{{ p.id }}">00</div><div class="countdown-lbl">Days</div></div>
+                <div style="color:var(--cyan);font-weight:700;">:</div>
+                <div class="countdown-unit"><div class="countdown-num" id="cd-h-{{ p.id }}">00</div><div class="countdown-lbl">Hours</div></div>
+                <div style="color:var(--cyan);font-weight:700;">:</div>
+                <div class="countdown-unit"><div class="countdown-num" id="cd-m-{{ p.id }}">00</div><div class="countdown-lbl">Min</div></div>
+                <div style="color:var(--cyan);font-weight:700;">:</div>
+                <div class="countdown-unit"><div class="countdown-num" id="cd-s-{{ p.id }}">00</div><div class="countdown-lbl">Sec</div></div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="card no-plans">
+            <div class="no-plans-icon">📊</div>
+            <div style="font-weight:700;margin-bottom:.5rem;">No Active Plans</div>
+            <div style="font-size:.83rem;color:var(--muted);margin-bottom:1.2rem;">Deposit USDT to start earning daily returns.</div>
+            <button class="btn btn-primary" onclick="openDepositModal()">Start Investing</button>
+          </div>
+        {% endif %}
+
+        {% if completed_plans %}
+        <div style="margin-top:1.5rem;">
+          <div class="section-title">Completed Plans</div>
+          {% for p in completed_plans %}
+          <div class="card card-sm" style="margin-bottom:.6rem;display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <span class="badge badge-completed">{{ p.plan_key|title }}</span>
+              <span style="font-size:.8rem;color:var(--muted);margin-left:.5rem;">{{ p.start_time[:10] }}</span>
+            </div>
+            <div style="font-family:'Space Mono',monospace;font-weight:700;color:var(--gold);">${{ "%.2f"|format(p.amount) }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Referrals Tab -->
+      <div id="referrals-tab" style="display:none;">
+        <div class="grid-2" style="margin-bottom:1.5rem;">
+          <div class="card">
+            <div class="stat-label">Your Referral Link</div>
+            <div style="margin-top:.7rem;">
+              <div class="ref-link-box">
+                <input type="text" value="{{ ref_link }}" readonly id="ref-link-input">
+                <button class="copy-btn" onclick="copyText('{{ ref_link }}')">Copy</button>
+              </div>
+              <div style="font-size:.75rem;color:var(--muted);margin-top:.5rem;">Earn 2% commission on every referred deposit</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="grid-2" style="gap:.8rem;">
+              <div>
+                <div class="stat-value text-gold">{{ total_referrals }}</div>
+                <div class="stat-label">Total Referrals</div>
+              </div>
+              <div>
+                <div class="stat-value text-green">{{ active_ref_count }}</div>
+                <div class="stat-label">Active Referrals</div>
+              </div>
+            </div>
+            <div style="margin-top:.8rem;padding-top:.8rem;border-top:1px solid var(--border);">
+              <div style="font-size:.75rem;color:var(--muted);">Withdrawal requires <strong style="color:var(--text);">5 active referrals</strong></div>
+              <div class="progress-bar" style="margin-top:.5rem;">
+                <div class="progress-fill" style="width:{{ [active_ref_count / 5 * 100, 100]|min }}%;"></div>
+              </div>
+              <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem;">{{ active_ref_count }}/5 active referrals</div>
+            </div>
+          </div>
+        </div>
+        {% if referrals %}
+        <div class="card">
+          <div class="section-title">Referral History</div>
+          <table>
+            <thead><tr><th>Referred Wallet</th><th>Commission</th><th>Date</th></tr></thead>
+            <tbody>
+              {% for r in referrals %}
+              <tr>
+                <td class="mono" style="font-size:.75rem;">{{ r.referred_wallet[:10] }}...{{ r.referred_wallet[-6:] }}</td>
+                <td class="text-green">${{ "%.4f"|format(r.commission) }}</td>
+                <td style="color:var(--muted);font-size:.75rem;">{{ r.created_at[:10] }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="card no-plans">
+          <div class="no-plans-icon">👥</div>
+          <div>Share your referral link to start earning commissions.</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- History Tab -->
+      <div id="history-tab" style="display:none;">
+        <div class="card" style="margin-bottom:1rem;">
+          <div class="section-title">Deposit History</div>
+          {% if deposits %}
+          <table>
+            <thead><tr><th>Plan</th><th>Amount</th><th>TXID</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>
+              {% for d in deposits %}
+              <tr>
+                <td>{{ d.plan_key|title }}</td>
+                <td class="mono">${{ "%.2f"|format(d.amount) }}</td>
+                <td class="mono" style="font-size:.7rem;">{{ d.txid[:12] }}...</td>
+                <td>
+                  {% if d.status == 'approved' %}<span class="badge badge-active">Approved</span>
+                  {% elif d.status == 'pending' %}<span class="badge badge-pending">Pending</span>
+                  {% else %}<span class="badge badge-rejected">Rejected</span>{% endif %}
+                </td>
+                <td style="color:var(--muted);font-size:.75rem;">{{ d.submitted_at[:10] }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div style="text-align:center;padding:2rem;color:var(--muted);">No deposits yet.</div>
+          {% endif %}
+        </div>
+        <div class="card">
+          <div class="section-title">Withdrawal History</div>
+          {% if withdrawals %}
+          <table>
+            <thead><tr><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>
+              {% for w in withdrawals %}
+              <tr>
+                <td class="mono">${{ "%.2f"|format(w.amount) }}</td>
+                <td>
+                  {% if w.status == 'approved' %}<span class="badge badge-active">Approved</span>
+                  {% elif w.status == 'pending' %}<span class="badge badge-pending">Pending</span>
+                  {% else %}<span class="badge badge-rejected">Rejected</span>{% endif %}
+                </td>
+                <td style="color:var(--muted);font-size:.75rem;">{{ w.submitted_at[:10] }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div style="text-align:center;padding:2rem;color:var(--muted);">No withdrawals yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DEPOSIT MODAL -->
+<div id="deposit-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>💳 Make a Deposit</span>
+      <button class="modal-close" onclick="closeModal('deposit-modal')">✕</button>
+    </div>
+    <div id="deposit-step-1">
+      <div style="margin-bottom:1rem;font-size:.85rem;font-weight:600;">Select Investment Plan</div>
+      <div class="plan-select-grid">
+        {% for key, plan in plans.items() %}
+        <div class="plan-select-card" onclick="selectPlan('{{ key }}')" id="plan-card-{{ key }}" style="border-color:{{ plan.color }}33;">
+          <div style="font-size:1.3rem;margin-bottom:.4rem;">
+            {% if key=='basic' %}🔵{% elif key=='premium' %}🟣{% else %}🟡{% endif %}
+          </div>
+          <div style="font-weight:700;color:{{ plan.color }};margin-bottom:.3rem;">{{ plan.name }}</div>
+          <div style="font-size:.75rem;color:var(--muted);">Min ${{ plan.min_deposit }}</div>
+          <div style="font-size:.72rem;margin-top:.3rem;color:{{ plan.color }};">20 Days</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div style="margin-top:1rem;text-align:center;">
+        <button class="btn btn-primary" onclick="goDepositStep2()">Continue →</button>
+      </div>
+    </div>
+    <div id="deposit-step-2" style="display:none;">
+      <div style="text-align:center;margin-bottom:1.2rem;">
+        <img src="" id="qr-img" style="width:160px;height:160px;border-radius:8px;" alt="QR">
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.5rem;">Scan with your wallet app</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:1rem;margin-bottom:1rem;">
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:.4rem;font-weight:700;text-transform:uppercase;">Deposit Address (USDT TRC20)</div>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <span class="mono" style="font-size:.75rem;word-break:break-all;flex:1;color:var(--cyan);">{{ deposit_address }}</span>
+          <button class="copy-btn" onclick="copyText('{{ deposit_address }}')">Copy</button>
+        </div>
+      </div>
+      <div class="steps" style="margin-bottom:1rem;">
+        <div class="step"><div class="step-num">1</div><div>Send USDT (TRC20) to the address above</div></div>
+        <div class="step"><div class="step-num">2</div><div>Copy your transaction hash (TXID) from your wallet</div></div>
+        <div class="step"><div class="step-num">3</div><div>Submit TXID below — admin approves in ~15 min</div></div>
+      </div>
+      <div class="form-group">
+        <label>Deposit Amount (USDT)</label>
+        <input type="number" id="dep-amount" placeholder="Enter amount" min="10" step="0.01">
+        <div id="amount-hint" style="font-size:.73rem;color:var(--muted);margin-top:.3rem;"></div>
+      </div>
+      <div class="form-group">
+        <label>Transaction Hash (TXID)</label>
+        <input type="text" id="dep-txid" placeholder="Enter your TXID from blockchain">
+      </div>
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:.8rem;font-size:.77rem;color:var(--gold);margin-bottom:1rem;">
+        ⚠ Send ONLY USDT (TRC20) to this address. Processing: avg 15 min, max 3 hours.
+      </div>
+      <div style="display:flex;gap:.7rem;">
+        <button class="btn btn-outline" onclick="goDepositStep1()">← Back</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="submitDeposit()">Submit Deposit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div id="withdraw-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>💸 Withdraw Funds</span>
+      <button class="modal-close" onclick="closeModal('withdraw-modal')">✕</button>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:1rem;margin-bottom:1.2rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:.72rem;color:var(--muted);">Available Balance</div>
+          <div style="font-size:1.4rem;font-weight:800;font-family:'Space Mono',monospace;color:var(--green);">${{ "%.2f"|format(user.balance) }}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:.72rem;color:var(--muted);">Active Referrals</div>
+          <div style="font-size:1.2rem;font-weight:700;color:var(--gold);">{{ active_ref_count }}/5</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Withdrawal Amount (Min ${{ 20 }})</label>
+      <input type="number" id="wd-amount" placeholder="Enter amount" min="20" step="0.01" max="{{ user.balance }}">
+    </div>
+    <div style="background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);border-radius:8px;padding:.8rem;font-size:.77rem;color:var(--purple);margin-bottom:1rem;">
+      ℹ Withdrawal is sent to your registered wallet: <span class="mono" style="font-size:.7rem;">{{ user.wallet[:8] }}...{{ user.wallet[-6:] }}</span>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="submitWithdraw()">Submit Withdrawal</button>
+    <div id="wd-result" style="margin-top:1rem;display:none;"></div>
+  </div>
+</div>
+
+<script>
+// Tab switching
+function showTab(tabId, btn){
+  document.querySelectorAll('[id$="-tab"]').forEach(t=>t.style.display='none');
+  document.getElementById(tabId).style.display='block';
+  if(btn){
+    document.querySelectorAll('.tab-nav button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+}
+
+// Countdowns
+let planTimers = {};
+{% for p in active_plans %}
+planTimers['{{ p.id }}'] = {{ p.remaining_secs }};
+{% endfor %}
+
+function padZ(n){ return String(n).padStart(2,'0'); }
+
+function updateCountdowns(){
+  for(let pid in planTimers){
+    let s = planTimers[pid];
+    if(s <= 0){ s = 0; }
+    const d = Math.floor(s/86400);
+    const h = Math.floor((s%86400)/3600);
+    const m = Math.floor((s%3600)/60);
+    const sec = s%60;
+    document.getElementById('cd-d-'+pid).textContent = padZ(d);
+    document.getElementById('cd-h-'+pid).textContent = padZ(h);
+    document.getElementById('cd-m-'+pid).textContent = padZ(m);
+    document.getElementById('cd-s-'+pid).textContent = padZ(sec);
+    planTimers[pid]--;
+  }
+}
+setInterval(updateCountdowns, 1000);
+updateCountdowns();
+
+// Live earnings update
+async function updateEarnings(){
+  try{
+    const res = await fetch('/api/plan_status');
+    const data = await res.json();
+    let totalE = 0;
+    data.forEach(p=>{
+      const tel = document.getElementById('total-'+p.id);
+      if(tel) tel.textContent = '$'+p.total.toFixed(4);
+      totalE += p.total;
+    });
+    document.getElementById('total-earnings').textContent = '$'+totalE.toFixed(4);
+  }catch(e){}
+}
+setInterval(updateEarnings, 10000);
+updateEarnings();
+
+// Deposit
+let selectedPlan = 'basic';
+const planMins = { basic:10, premium:50, elite:100 };
+
+function openDepositModal(){
+  document.getElementById('deposit-modal').style.display='flex';
+}
+function closeModal(id){
+  document.getElementById(id).style.display='none';
+}
+function selectPlan(key){
+  selectedPlan = key;
+  document.querySelectorAll('.plan-select-card').forEach(c=>c.classList.remove('selected-plan'));
+  document.getElementById('plan-card-'+key).classList.add('selected-plan');
+}
+function goDepositStep2(){
+  document.getElementById('deposit-step-1').style.display='none';
+  document.getElementById('deposit-step-2').style.display='block';
+  document.getElementById('amount-hint').textContent = 'Minimum: $'+planMins[selectedPlan];
+  // Show QR
+  document.getElementById('qr-img').src = '/deposit?plan='+selectedPlan+'#qr';
+}
+function goDepositStep1(){
+  document.getElementById('deposit-step-2').style.display='none';
+  document.getElementById('deposit-step-1').style.display='block';
+}
+async function submitDeposit(){
+  const amount = document.getElementById('dep-amount').value;
+  const txid = document.getElementById('dep-txid').value.trim();
+  if(!amount || amount < planMins[selectedPlan]){ showToast('Amount below minimum','error'); return; }
+  if(!txid){ showToast('Please enter TXID','error'); return; }
+  const fd = new FormData();
+  fd.append('plan_key',selectedPlan);
+  fd.append('amount',amount);
+  fd.append('txid',txid);
+  const res = await fetch('/deposit',{method:'POST',body:fd});
+  const data = await res.json();
+  if(data.success){ showToast(data.message); closeModal('deposit-modal'); setTimeout(()=>location.reload(),2000); }
+  else showToast(data.error,'error');
+}
+
+// Withdraw
+function openWithdrawModal(){
+  document.getElementById('withdraw-modal').style.display='flex';
+}
+async function submitWithdraw(){
+  const amount = document.getElementById('wd-amount').value;
+  if(!amount||amount<20){ showToast('Minimum withdrawal is $20','error'); return; }
+  const fd = new FormData();
+  fd.append('amount',amount);
+  const res = await fetch('/withdraw',{method:'POST',body:fd});
+  const data = await res.json();
+  const resultEl = document.getElementById('wd-result');
+  resultEl.style.display='block';
+  if(data.eligible && data.success){
+    resultEl.innerHTML='<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);padding:.8rem;border-radius:8px;color:var(--green);font-size:.83rem;">✓ '+data.message+'</div>';
+    setTimeout(()=>location.reload(),2000);
+  } else {
+    resultEl.innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);padding:.8rem;border-radius:8px;color:var(--red);font-size:.83rem;">⚠ '+data.message+'</div>';
+  }
+}
+selectPlan('basic');
+</script>
+{% endblock %}

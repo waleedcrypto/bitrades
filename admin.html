@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Admin Panel – Bitrade{% endblock %}
+{% block extra_head %}
+<style>
+.admin-layout{display:flex;min-height:100vh;}
+.admin-sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);position:fixed;left:0;top:0;bottom:0;z-index:50;overflow-y:auto;}
+.admin-brand{padding:1.2rem 1.5rem 1rem;border-bottom:1px solid var(--border);}
+.admin-brand-title{font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.admin-brand-sub{font-size:.7rem;color:var(--muted);margin-top:.2rem;}
+.admin-nav-section{padding:.8rem 1.5rem .3rem;font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;}
+.admin-sidebar a{display:flex;align-items:center;gap:.8rem;padding:.65rem 1.5rem;color:var(--muted);font-size:.83rem;font-weight:600;transition:.15s;border-left:2px solid transparent;}
+.admin-sidebar a:hover,.admin-sidebar a.active{color:var(--gold);background:rgba(245,158,11,.04);border-left-color:var(--gold);}
+.admin-main{margin-left:240px;flex:1;}
+.admin-topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between;}
+.admin-topbar-title{font-size:1.1rem;font-weight:700;}
+.admin-badge{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);padding:.2rem .7rem;border-radius:4px;font-size:.72rem;font-weight:700;}
+.admin-content{padding:2rem;}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;}
+.admin-stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem;}
+.admin-stat-val{font-size:1.8rem;font-weight:800;font-family:'Space Mono',monospace;}
+.admin-stat-lbl{font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:.2rem;}
+.admin-stat-icon{font-size:1.4rem;margin-bottom:.5rem;}
+.alert-banner{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:.8rem;}
+.alert-banner-text{font-size:.85rem;}
+.quick-links{display:grid;grid-template-columns:repeat(2,1fr);gap:.8rem;margin-top:1.5rem;}
+.quick-link{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;display:flex;align-items:center;gap:.8rem;transition:.2s;text-decoration:none;color:var(--text);}
+.quick-link:hover{border-color:var(--gold);color:var(--gold);}
+.quick-link-icon{font-size:1.5rem;}
+.quick-link-text{font-size:.85rem;font-weight:600;}
+</style>
+{% endblock %}
+{% block body %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <div class="admin-brand">
+      <div class="admin-brand-title">⚡ BITRADE</div>
+      <div class="admin-brand-sub">Admin Control Panel</div>
+      <div style="margin-top:.5rem;font-size:.65rem;font-family:'Space Mono',monospace;color:rgba(245,158,11,.5);">ADMIN</div>
+    </div>
+    <div class="admin-nav-section">Overview</div>
+    <a href="/admin" class="active">📊 Dashboard</a>
+    <div class="admin-nav-section">Manage</div>
+    <a href="/admin/deposits">💳 Deposits <span id="dep-badge" style="margin-left:auto;background:rgba(239,68,68,.2);color:var(--red);padding:.1rem .5rem;border-radius:3px;font-size:.65rem;">{{ pending_deposits }}</span></a>
+    <a href="/admin/withdrawals">💸 Withdrawals <span style="margin-left:auto;background:rgba(239,68,68,.2);color:var(--red);padding:.1rem .5rem;border-radius:3px;font-size:.65rem;">{{ pending_withdrawals }}</span></a>
+    <a href="/admin/plans">📈 Plans</a>
+    <a href="/admin/users">👥 Users</a>
+    <a href="/admin/referrals">🔗 Referrals</a>
+    <div class="admin-nav-section">System</div>
+    <a href="/admin/logs">📋 Audit Logs</a>
+    <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);margin-top:1rem;">
+      <a href="/logout" style="color:var(--red);border:none;padding:0;">🚪 Logout</a>
+    </div>
+  </div>
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar-title">Admin Dashboard</div>
+      <div style="display:flex;gap:.8rem;align-items:center;">
+        <span class="admin-badge">ADMIN</span>
+        <span style="font-size:.75rem;color:var(--muted);font-family:'Space Mono',monospace;">{{ session.wallet[:10] }}...</span>
+      </div>
+    </div>
+    <div class="admin-content">
+      {% if pending_deposits > 0 or pending_withdrawals > 0 %}
+      <div class="alert-banner">
+        <span style="font-size:1.2rem;">🔔</span>
+        <div class="alert-banner-text">
+          You have <strong>{{ pending_deposits }} pending deposit(s)</strong> and <strong>{{ pending_withdrawals }} pending withdrawal(s)</strong> awaiting approval.
+        </div>
+        <div style="margin-left:auto;display:flex;gap:.5rem;">
+          <a href="/admin/deposits" class="btn btn-sm btn-gold">Review Deposits</a>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="stats-grid">
+        <div class="admin-stat" style="border-color:rgba(0,212,255,.2);">
+          <div class="admin-stat-icon">👥</div>
+          <div class="admin-stat-val text-cyan">{{ total_users }}</div>
+          <div class="admin-stat-lbl">Total Users</div>
+        </div>
+        <div class="admin-stat" style="border-color:rgba(16,185,129,.2);">
+          <div class="admin-stat-icon">📥</div>
+          <div class="admin-stat-val text-green">${{ "%.2f"|format(total_deposits) }}</div>
+          <div class="admin-stat-lbl">Total Deposits</div>
+        </div>
+        <div class="admin-stat" style="border-color:rgba(239,68,68,.2);">
+          <div class="admin-stat-icon">📤</div>
+          <div class="admin-stat-val text-red">${{ "%.2f"|format(total_withdrawals) }}</div>
+          <div class="admin-stat-lbl">Total Withdrawals</div>
+        </div>
+        <div class="admin-stat" style="border-color:rgba(245,158,11,.2);">
+          <div class="admin-stat-icon">⏳</div>
+          <div class="admin-stat-val text-gold">{{ pending_deposits }}</div>
+          <div class="admin-stat-lbl">Pending Deposits</div>
+        </div>
+        <div class="admin-stat" style="border-color:rgba(168,85,247,.2);">
+          <div class="admin-stat-icon">🔄</div>
+          <div class="admin-stat-val text-purple">{{ pending_withdrawals }}</div>
+          <div class="admin-stat-lbl">Pending Withdrawals</div>
+        </div>
+        <div class="admin-stat" style="border-color:rgba(0,212,255,.2);">
+          <div class="admin-stat-icon">📊</div>
+          <div class="admin-stat-val text-cyan">{{ active_plans }}</div>
+          <div class="admin-stat-lbl">Active Plans</div>
+        </div>
+      </div>
+
+      <div class="quick-links">
+        <a href="/admin/deposits" class="quick-link">
+          <div class="quick-link-icon">💳</div>
+          <div><div class="quick-link-text">Manage Deposits</div><div style="font-size:.72rem;color:var(--muted);">Review & approve TXIDs</div></div>
+        </a>
+        <a href="/admin/withdrawals" class="quick-link">
+          <div class="quick-link-icon">💸</div>
+          <div><div class="quick-link-text">Manage Withdrawals</div><div style="font-size:.72rem;color:var(--muted);">Process withdrawal requests</div></div>
+        </a>
+        <a href="/admin/users" class="quick-link">
+          <div class="quick-link-icon">👥</div>
+          <div><div class="quick-link-text">User Management</div><div style="font-size:.72rem;color:var(--muted);">View & adjust balances</div></div>
+        </a>
+        <a href="/admin/logs" class="quick-link">
+          <div class="quick-link-icon">📋</div>
+          <div><div class="quick-link-text">Audit Logs</div><div style="font-size:.72rem;color:var(--muted);">All admin actions</div></div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

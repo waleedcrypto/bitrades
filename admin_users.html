@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Admin – Users{% endblock %}
+{% block extra_head %}
+<style>
+.admin-layout{display:flex;min-height:100vh;}
+.admin-sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);position:fixed;left:0;top:0;bottom:0;z-index:50;}
+.admin-brand{padding:1.2rem 1.5rem 1rem;border-bottom:1px solid var(--border);}
+.admin-brand-title{font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.admin-sidebar a{display:flex;align-items:center;gap:.8rem;padding:.65rem 1.5rem;color:var(--muted);font-size:.83rem;font-weight:600;transition:.15s;border-left:2px solid transparent;}
+.admin-sidebar a:hover,.admin-sidebar a.active{color:var(--gold);border-left-color:var(--gold);}
+.admin-main{margin-left:240px;flex:1;}
+.admin-topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between;}
+.admin-content{padding:2rem;}
+.adj-form{display:flex;gap:.4rem;align-items:center;}
+.adj-input{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.35rem .6rem;font-size:.75rem;width:90px;}
+</style>
+{% endblock %}
+{% block body %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <div class="admin-brand"><div class="admin-brand-title">⚡ BITRADE</div></div>
+    <a href="/admin">📊 Dashboard</a>
+    <a href="/admin/deposits">💳 Deposits</a>
+    <a href="/admin/withdrawals">💸 Withdrawals</a>
+    <a href="/admin/plans">📈 Plans</a>
+    <a href="/admin/users" class="active">👥 Users</a>
+    <a href="/admin/referrals">🔗 Referrals</a>
+    <a href="/admin/logs">📋 Audit Logs</a>
+    <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);margin-top:1rem;">
+      <a href="/logout" style="color:var(--red);">🚪 Logout</a>
+    </div>
+  </div>
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div style="font-size:1.1rem;font-weight:700;">👥 User Management</div>
+      <span style="font-size:.78rem;color:var(--muted);">{{ users|length }} total users</span>
+    </div>
+    <div class="admin-content">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Wallet</th><th>Balance</th><th>Ref Earnings</th><th>Ref Code</th><th>Referred By</th><th>Joined</th><th>Adjust Balance</th></tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td class="mono" style="color:var(--muted);">#{{ u.id }}</td>
+              <td class="mono" style="font-size:.72rem;color:var(--cyan);">{{ u.wallet[:10] }}...{{ u.wallet[-6:] }}</td>
+              <td class="mono" style="color:var(--green);font-weight:700;">${{ "%.4f"|format(u.balance) }}</td>
+              <td class="mono" style="color:var(--gold);">${{ "%.4f"|format(u.referral_earnings) }}</td>
+              <td class="mono" style="font-size:.72rem;">{{ u.referral_code }}</td>
+              <td class="mono" style="font-size:.7rem;color:var(--muted);">{{ u.referred_by[:8] + '...' if u.referred_by else '—' }}</td>
+              <td style="font-size:.75rem;color:var(--muted);">{{ u.created_at[:10] }}</td>
+              <td>
+                <div class="adj-form">
+                  <input type="number" class="adj-input" id="adj-{{ u.wallet }}" placeholder="±amount" step="0.01">
+                  <button class="btn btn-outline btn-sm" onclick="adjustBalance('{{ u.wallet }}')">Apply</button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+async function adjustBalance(wallet){
+  const amt = document.getElementById('adj-'+wallet).value;
+  if(!amt) return;
+  if(!confirm('Adjust balance by $'+amt+' for '+wallet.slice(0,10)+'...?')) return;
+  const fd = new FormData();
+  fd.append('wallet',wallet); fd.append('amount',amt);
+  const res = await fetch('/admin/user/balance',{method:'POST',body:fd});
+  const d = await res.json();
+  if(d.success){showToast('Balance adjusted!');setTimeout(()=>location.reload(),1500);}
+}
+</script>
+{% endblock %}

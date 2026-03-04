@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% block title %}Bitrade – Connect Wallet{% endblock %}
+{% block body %}
+<style>
+.auth-bg{
+  min-height:100vh;
+  background:var(--bg);
+  display:flex;
+  flex-direction:column;
+}
+.auth-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.2rem 2.5rem;border-bottom:1px solid var(--border);
+  background:rgba(5,10,15,.8);backdrop-filter:blur(12px);
+}
+.auth-brand{
+  font-size:1.8rem;font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.auth-wrap{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:3rem 1rem;position:relative;overflow:hidden;
+}
+.auth-glow{
+  position:absolute;width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,212,255,.08) 0%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;
+}
+.auth-glow2{
+  position:absolute;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,rgba(168,85,247,.06) 0%,transparent 70%);
+  top:20%;right:10%;pointer-events:none;
+}
+.auth-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:20px;padding:2.5rem;width:100%;max-width:480px;
+  position:relative;z-index:1;
+  box-shadow:0 0 60px rgba(0,212,255,.05),0 20px 60px rgba(0,0,0,.4);
+}
+.auth-logo-ring{
+  width:72px;height:72px;border-radius:50%;
+  border:2px solid rgba(0,212,255,.3);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 1.5rem;
+  background:radial-gradient(circle,rgba(0,212,255,.1),transparent);
+  font-size:1.8rem;
+}
+.auth-title{font-size:1.6rem;font-weight:800;text-align:center;margin-bottom:.4rem;}
+.auth-sub{font-size:.85rem;color:var(--muted);text-align:center;margin-bottom:2rem;}
+.tab-btns{display:flex;background:var(--bg3);border-radius:10px;padding:.3rem;margin-bottom:1.5rem;gap:.3rem;}
+.tab-btn{flex:1;padding:.55rem;border:none;background:transparent;color:var(--muted);border-radius:7px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;transition:.2s;}
+.tab-btn.active{background:var(--card);color:var(--cyan);box-shadow:0 0 10px rgba(0,212,255,.1);}
+.auth-info{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.2rem;}
+.auth-info-row{display:flex;align-items:flex-start;gap:.7rem;font-size:.8rem;color:var(--muted);margin-bottom:.5rem;}
+.auth-info-row:last-child{margin-bottom:0;}
+.auth-info-row span:first-child{color:var(--cyan);flex-shrink:0;margin-top:.1rem;}
+.wallet-input-wrap{position:relative;}
+.wallet-input-wrap input{font-family:'Space Mono',monospace;font-size:.8rem;padding-right:3.5rem;}
+.wallet-check{position:absolute;right:.8rem;top:50%;transform:translateY(-50%);font-size:.85rem;}
+.wallet-check.valid{color:var(--green);}
+.wallet-check.invalid{color:var(--red);}
+.plan-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:1.2rem;}
+.plan-mini{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.8rem .6rem;text-align:center;cursor:pointer;transition:.2s;}
+.plan-mini:hover{border-color:var(--cyan);}
+.plan-mini-name{font-size:.72rem;font-weight:700;margin-bottom:.2rem;}
+.plan-mini-min{font-size:.7rem;color:var(--muted);}
+.plan-mini-rate{font-size:.68rem;margin-top:.2rem;}
+.error-msg{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);padding:.7rem 1rem;border-radius:8px;font-size:.82rem;margin-bottom:1rem;}
+.features{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.feature-item{display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--muted);}
+.feature-item span:first-child{color:var(--green);}
+</style>
+<div class="auth-bg">
+  <div class="auth-nav">
+    <div class="auth-brand">BITRADE</div>
+    <div style="display:flex;gap:.5rem;">
+      <span class="badge" style="background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.2);">TRC20</span>
+      <span class="badge" style="background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.2);">Secure</span>
+    </div>
+  </div>
+  <div class="auth-wrap">
+    <div class="auth-glow"></div>
+    <div class="auth-glow2"></div>
+    <div class="auth-card">
+      <div class="auth-logo-ring">₮</div>
+      <div class="auth-title">Connect to <span style="color:var(--cyan)">Bitrade</span></div>
+      <div class="auth-sub">Use your USDT TRC20 wallet to access your account</div>
+      <div class="tab-btns">
+        <button class="tab-btn active" onclick="switchTab('login',this)">Login</button>
+        <button class="tab-btn" onclick="switchTab('register',this)">Register</button>
+      </div>
+      {% if error %}<div class="error-msg">⚠ {{ error }}</div>{% endif %}
+      <!-- Login Tab -->
+      <div id="tab-login">
+        <form method="POST" action="/auth">
+          <div class="form-group">
+            <label>Your USDT TRC20 Wallet Address</label>
+            <div class="wallet-input-wrap">
+              <input type="text" name="wallet" id="login-wallet" placeholder="T..." required
+                     oninput="validateWallet(this,'login-check')" autocomplete="off">
+              <span class="wallet-check" id="login-check"></span>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:.9rem;font-size:.95rem;">
+            Connect Wallet →
+          </button>
+        </form>
+      </div>
+      <!-- Register Tab -->
+      <div id="tab-register" style="display:none;">
+        <form method="POST" action="/auth">
+          <div class="form-group">
+            <label>Your USDT TRC20 Wallet Address</label>
+            <div class="wallet-input-wrap">
+              <input type="text" name="wallet" id="reg-wallet" placeholder="T..." required
+                     oninput="validateWallet(this,'reg-check')" autocomplete="off">
+              <span class="wallet-check" id="reg-check"></span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Referral Code <span style="color:var(--muted);font-weight:400;">(optional)</span></label>
+            <input type="text" name="ref" id="ref-code" placeholder="Enter referral code" style="text-transform:uppercase">
+          </div>
+          <div class="auth-info">
+            <div class="auth-info-row"><span>ℹ</span><span>Your wallet address becomes your unique account ID. No email or password needed.</span></div>
+            <div class="auth-info-row"><span>🔒</span><span>Only USDT TRC20 format accepted (starts with T, 34 characters).</span></div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:.9rem;font-size:.95rem;">
+            Create Account →
+          </button>
+        </form>
+      </div>
+      <!-- Plan preview -->
+      <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);">
+        <div style="font-size:.75rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.7rem;">Investment Plans</div>
+        <div class="plan-preview">
+          <div class="plan-mini">
+            <div class="plan-mini-name" style="color:#00d4ff;">Basic</div>
+            <div class="plan-mini-min">From $10</div>
+            <div class="plan-mini-rate text-cyan">20 Days</div>
+          </div>
+          <div class="plan-mini">
+            <div class="plan-mini-name" style="color:#a855f7;">Premium</div>
+            <div class="plan-mini-min">From $50</div>
+            <div class="plan-mini-rate text-purple">20 Days</div>
+          </div>
+          <div class="plan-mini">
+            <div class="plan-mini-name" style="color:#f59e0b;">Elite</div>
+            <div class="plan-mini-min">From $100</div>
+            <div class="plan-mini-rate text-gold">20 Days</div>
+          </div>
+        </div>
+      </div>
+      <div class="features">
+        <div class="feature-item"><span>✓</span><span>Daily Earnings</span></div>
+        <div class="feature-item"><span>✓</span><span>2% Referral Bonus</span></div>
+        <div class="feature-item"><span>✓</span><span>Secure Withdrawals</span></div>
+        <div class="feature-item"><span>✓</span><span>TRC20 Network</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function switchTab(tab, btn){
+  document.getElementById('tab-login').style.display = tab==='login'?'block':'none';
+  document.getElementById('tab-register').style.display = tab==='register'?'block':'none';
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function validateWallet(input, checkId){
+  const val = input.value.trim();
+  const el = document.getElementById(checkId);
+  const valid = /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(val);
+  if(val.length === 0){ el.textContent=''; return; }
+  el.textContent = valid ? '✓' : '✗';
+  el.className = 'wallet-check ' + (valid ? 'valid' : 'invalid');
+}
+// Pre-fill referral if in URL
+const urlRef = new URLSearchParams(window.location.search).get('ref');
+if(urlRef){ 
+  document.getElementById('ref-code').value = urlRef;
+  switchTab('register', document.querySelectorAll('.tab-btn')[1]);
+}
+</script>
+{% endblock %}

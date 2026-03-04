@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Admin – Plans{% endblock %}
+{% block extra_head %}
+<style>
+.admin-layout{display:flex;min-height:100vh;}
+.admin-sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);position:fixed;left:0;top:0;bottom:0;z-index:50;}
+.admin-brand{padding:1.2rem 1.5rem 1rem;border-bottom:1px solid var(--border);}
+.admin-brand-title{font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.admin-sidebar a{display:flex;align-items:center;gap:.8rem;padding:.65rem 1.5rem;color:var(--muted);font-size:.83rem;font-weight:600;transition:.15s;border-left:2px solid transparent;}
+.admin-sidebar a:hover,.admin-sidebar a.active{color:var(--gold);border-left-color:var(--gold);}
+.admin-main{margin-left:240px;flex:1;}
+.admin-topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between;}
+.admin-content{padding:2rem;}
+</style>
+{% endblock %}
+{% block body %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <div class="admin-brand"><div class="admin-brand-title">⚡ BITRADE</div></div>
+    <a href="/admin">📊 Dashboard</a>
+    <a href="/admin/deposits">💳 Deposits</a>
+    <a href="/admin/withdrawals">💸 Withdrawals</a>
+    <a href="/admin/plans" class="active">📈 Plans</a>
+    <a href="/admin/users">👥 Users</a>
+    <a href="/admin/referrals">🔗 Referrals</a>
+    <a href="/admin/logs">📋 Audit Logs</a>
+    <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);margin-top:1rem;">
+      <a href="/logout" style="color:var(--red);">🚪 Logout</a>
+    </div>
+  </div>
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div style="font-size:1.1rem;font-weight:700;">📈 Plan Management</div>
+    </div>
+    <div class="admin-content">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>User</th><th>Plan</th><th>Amount</th><th>Rate</th><th>Start</th><th>End</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            {% for p in plans %}
+            {% set pi = plan_info.get(p.plan_key, {}) %}
+            <tr>
+              <td class="mono" style="color:var(--muted);">#{{ p.id }}</td>
+              <td class="mono" style="font-size:.72rem;color:var(--cyan);">{{ p.user_wallet[:10] }}...</td>
+              <td style="color:{{ pi.get('color','#fff') }};font-weight:700;">{{ p.plan_key|title }}</td>
+              <td class="mono" style="color:var(--green);">${{ "%.2f"|format(p.amount) }}</td>
+              <td class="mono" style="color:var(--muted);">{{ (p.daily_rate*100)|round(1) }}%/day</td>
+              <td style="font-size:.75rem;color:var(--muted);">{{ p.start_time[:16] if p.start_time else '—' }}</td>
+              <td style="font-size:.75rem;color:var(--muted);">{{ p.end_time[:16] if p.end_time else '—' }}</td>
+              <td>
+                {% if p.status=='active' %}<span class="badge badge-active">Active</span>
+                {% elif p.status=='completed' %}<span class="badge badge-completed">Completed</span>
+                {% else %}<span class="badge badge-pending">Pending</span>{% endif %}
+              </td>
+              <td>
+                {% if p.status=='active' %}
+                <button class="btn btn-gold btn-sm" onclick="completePlan({{ p.id }})">Mark Complete</button>
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+async function completePlan(id){
+  if(!confirm('Manually complete plan #'+id+'? Balance will be credited.')) return;
+  const res = await fetch('/admin/plan/complete/'+id,{method:'POST'});
+  const d = await res.json();
+  if(d.success){showToast('Plan marked as completed!');setTimeout(()=>location.reload(),1500);}
+}
+</script>
+{% endblock %}

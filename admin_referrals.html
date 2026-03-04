@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Admin – Referrals{% endblock %}
+{% block extra_head %}
+<style>
+.admin-layout{display:flex;min-height:100vh;}
+.admin-sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);position:fixed;left:0;top:0;bottom:0;z-index:50;}
+.admin-brand{padding:1.2rem 1.5rem 1rem;border-bottom:1px solid var(--border);}
+.admin-brand-title{font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.admin-sidebar a{display:flex;align-items:center;gap:.8rem;padding:.65rem 1.5rem;color:var(--muted);font-size:.83rem;font-weight:600;transition:.15s;border-left:2px solid transparent;}
+.admin-sidebar a:hover,.admin-sidebar a.active{color:var(--gold);border-left-color:var(--gold);}
+.admin-main{margin-left:240px;flex:1;}
+.admin-topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:.9rem 2rem;}
+.admin-content{padding:2rem;}
+</style>
+{% endblock %}
+{% block body %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <div class="admin-brand"><div class="admin-brand-title">⚡ BITRADE</div></div>
+    <a href="/admin">📊 Dashboard</a>
+    <a href="/admin/deposits">💳 Deposits</a>
+    <a href="/admin/withdrawals">💸 Withdrawals</a>
+    <a href="/admin/plans">📈 Plans</a>
+    <a href="/admin/users">👥 Users</a>
+    <a href="/admin/referrals" class="active">🔗 Referrals</a>
+    <a href="/admin/logs">📋 Audit Logs</a>
+    <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);margin-top:1rem;">
+      <a href="/logout" style="color:var(--red);">🚪 Logout</a>
+    </div>
+  </div>
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div style="font-size:1.1rem;font-weight:700;">🔗 Referral Statistics</div>
+    </div>
+    <div class="admin-content">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table>
+          <thead><tr><th>ID</th><th>Referrer</th><th>Referred User</th><th>Commission</th><th>Deposit ID</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for r in referrals %}
+            <tr>
+              <td class="mono" style="color:var(--muted);">#{{ r.id }}</td>
+              <td class="mono" style="font-size:.72rem;color:var(--cyan);">{{ r.referrer_wallet[:10] }}...{{ r.referrer_wallet[-6:] }}</td>
+              <td class="mono" style="font-size:.72rem;color:var(--purple);">{{ r.referred_wallet[:10] }}...{{ r.referred_wallet[-6:] }}</td>
+              <td class="mono" style="color:var(--green);font-weight:700;">${{ "%.4f"|format(r.commission) }}</td>
+              <td class="mono" style="color:var(--muted);">#{{ r.deposit_id }}</td>
+              <td style="font-size:.75rem;color:var(--muted);">{{ r.created_at[:10] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if not referrals %}<div style="text-align:center;padding:3rem;color:var(--muted);">No referrals yet.</div>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

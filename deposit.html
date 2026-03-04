@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Deposit – Bitrade{% endblock %}
+{% block extra_head %}
+<style>
+.dep-layout{display:flex;min-height:100vh;}
+.sidebar{width:230px;background:var(--bg2);border-right:1px solid var(--border);position:fixed;left:0;top:0;bottom:0;}
+.sidebar-brand{padding:1.2rem 1.5rem 1.5rem;font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sidebar a{display:flex;align-items:center;gap:.8rem;padding:.65rem 1.5rem;color:var(--muted);font-size:.83rem;font-weight:600;transition:.15s;border-left:2px solid transparent;}
+.sidebar a:hover,.sidebar a.active{color:var(--cyan);background:rgba(0,212,255,.04);border-left-color:var(--cyan);}
+.dep-main{margin-left:230px;flex:1;padding:2rem;}
+.qr-container{text-align:center;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.5rem;}
+.qr-container img{border-radius:8px;}
+.addr-box{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem;margin:1rem 0;}
+.addr-text{font-family:'Space Mono',monospace;font-size:.75rem;color:var(--cyan);word-break:break-all;}
+</style>
+{% endblock %}
+{% block body %}
+<div class="dep-layout">
+  <div class="sidebar">
+    <div class="sidebar-brand">BITRADE</div>
+    <a href="/dashboard">📊 Dashboard</a>
+    <a href="/deposit" class="active">💳 Deposit</a>
+    <a href="/dashboard#withdraw">💸 Withdraw</a>
+    <a href="/logout" style="position:absolute;bottom:1rem;color:var(--red);">🚪 Logout</a>
+  </div>
+  <div class="dep-main">
+    <div style="max-width:600px;margin:0 auto;">
+      <div style="font-size:1.4rem;font-weight:800;margin-bottom:.4rem;">Make a Deposit</div>
+      <div style="font-size:.83rem;color:var(--muted);margin-bottom:1.5rem;">Send USDT TRC20 and submit your TXID for approval.</div>
+
+      <!-- Plan Selector -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="section-title">Select Plan</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;">
+          {% for key, p in plans.items() %}
+          <div onclick="selectPlan('{{ key }}')" id="pcard-{{ key }}"
+               style="border:2px solid {{ p.color }}33;border-radius:10px;padding:1rem;text-align:center;cursor:pointer;transition:.2s;"
+               class="plan-pick{% if key==plan_key %} plan-active{% endif %}">
+            <div style="font-weight:700;color:{{ p.color }};margin-bottom:.3rem;">{{ p.name }}</div>
+            <div style="font-size:.75rem;color:var(--muted);">Min ${{ p.min_deposit }}</div>
+            <div style="font-size:.7rem;color:{{ p.color }};margin-top:.2rem;">20 Days</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Address & QR -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="section-title">Deposit Address</div>
+        <div class="qr-container">
+          <img src="data:image/svg+xml;base64,{{ qr_data }}" width="160" height="160" alt="QR Code">
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.5rem;">Scan QR or copy address below</div>
+        </div>
+        <div class="addr-box">
+          <div style="font-size:.68rem;color:var(--muted);margin-bottom:.3rem;font-weight:700;text-transform:uppercase;">USDT TRC20 Address</div>
+          <div class="addr-text">{{ deposit_address }}</div>
+          <button class="copy-btn" style="margin-top:.6rem;" onclick="copyText('{{ deposit_address }}')">📋 Copy Address</button>
+        </div>
+        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:.8rem;font-size:.77rem;color:var(--gold);">
+          ⚠ Send ONLY USDT (TRC20) to this address. Other assets will be lost.
+        </div>
+      </div>
+
+      <!-- Submit TXID -->
+      <div class="card">
+        <div class="section-title">Submit Transaction</div>
+        <div class="form-group">
+          <label>Deposit Amount (USDT)</label>
+          <input type="number" id="d-amount" placeholder="Enter the amount you sent" min="10" step="0.01">
+          <div id="d-min-hint" style="font-size:.72rem;color:var(--muted);margin-top:.3rem;">Minimum: ${{ plan.min_deposit }}</div>
+        </div>
+        <div class="form-group">
+          <label>Transaction Hash (TXID)</label>
+          <input type="text" id="d-txid" placeholder="Paste your transaction hash here" style="font-family:'Space Mono',monospace;font-size:.78rem;">
+        </div>
+        <div style="background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:.8rem;font-size:.77rem;margin-bottom:1rem;">
+          <div style="font-weight:700;color:var(--cyan);margin-bottom:.4rem;">⏱ Processing Time</div>
+          <div style="color:var(--muted);">Average: 15 minutes &nbsp;|&nbsp; Maximum: 3 hours</div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:.9rem;" onclick="submitDep()">Submit Deposit Request</button>
+        <div id="dep-result" style="margin-top:1rem;display:none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let selectedPlan = '{{ plan_key }}';
+const planMins = { basic:10, premium:50, elite:100 };
+
+function selectPlan(key){
+  selectedPlan = key;
+  document.querySelectorAll('.plan-pick').forEach(c=>{
+    c.style.borderWidth='2px';
+    c.style.opacity='.7';
+  });
+  const card = document.getElementById('pcard-'+key);
+  card.style.borderWidth='2px';
+  card.style.opacity='1';
+  card.style.boxShadow='0 0 15px rgba(0,212,255,.1)';
+  document.getElementById('d-min-hint').textContent = 'Minimum: $'+planMins[key];
+}
+
+async function submitDep(){
+  const amount = document.getElementById('d-amount').value;
+  const txid = document.getElementById('d-txid').value.trim();
+  if(!amount || parseFloat(amount) < planMins[selectedPlan]){
+    showToast('Amount below minimum for this plan','error'); return;
+  }
+  if(!txid){ showToast('Please enter your TXID','error'); return; }
+  const fd = new FormData();
+  fd.append('plan_key',selectedPlan);
+  fd.append('amount',amount);
+  fd.append('txid',txid);
+  const res = await fetch('/deposit',{method:'POST',body:fd});
+  const data = await res.json();
+  const el = document.getElementById('dep-result');
+  el.style.display='block';
+  if(data.success){
+    el.innerHTML='<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);padding:.8rem;border-radius:8px;color:var(--green);font-size:.83rem;">✓ '+data.message+'</div>';
+    setTimeout(()=>window.location='/dashboard',2500);
+  } else {
+    el.innerHTML='<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);padding:.8rem;border-radius:8px;color:var(--red);font-size:.83rem;">⚠ '+data.error+'</div>';
+  }
+}
+selectPlan('{{ plan_key }}');
+</script>
+{% endblock %}
